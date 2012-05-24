@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/newproject.png</file>
+        <file>images/openproject.png</file>
+        <file>images/saveproject.png</file>
+        <file>images/saveasproject.png</file>
+        
+        <file>images/script.png</file>
+        <file>images/newscript.png</file>
+        <file>images/removescript.png</file>
+        <file>images/exportscript.png</file>
+        
+        <file>images/loadmodule.png</file>
+        <file>images/removemodule.png</file>
+        <file>images/configmodule.png</file>
+        <file>images/newinstance.png</file>
+        
+        <file>images/syscall.png</file>
+        <file>images/rategroup.png</file>
+        <file>images/module.png</file>
+        <file>images/block.png</file>
+    </qresource>
+</RCC>
