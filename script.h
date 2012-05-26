@@ -15,7 +15,7 @@ public:
         setIcon(QIcon(":/images/script.png"));
     }
 
-    const model_script_t *getScript() { return script; }
+    const model_script_t *getScript() const { return script; }
     const QString &getName() { return name; }
 
 private:

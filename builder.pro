@@ -9,14 +9,14 @@ HEADERS += \
     blockinstance.h \
     ioentry.h \
     script.h \
-    module.h
+    module.h \
+    link.h
 
 SOURCES += \
     mainwindow.cpp \
     graphicsview.cpp \
     main.cpp \
-    blockinstance.cpp \
-    ioentry.cpp
+    blockinstance.cpp
 
 RESOURCES += \
     application.qrc

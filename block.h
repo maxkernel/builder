@@ -4,7 +4,7 @@
 #include <QtGui>
 #include "blockinstance.h"
 
-typedef BlockInstance *(*create_f)(const QString &name, const void *userdata);
+typedef model_linkable_t *(*create_f)(model_t *model, model_script_t *script, const QString &name, const void *userdata);
 
 class Block : public QTreeWidgetItem
 {
@@ -16,9 +16,9 @@ public:
         setIcon(0, icon);
     }
 
-    BlockInstance *create()
+    model_linkable_t *create(model_t *model, model_script_t *script)
     {
-        return this->callback(name, userdata);
+        return this->callback(model, script, name, userdata);
     }
 
 private:

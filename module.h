@@ -14,7 +14,7 @@ public:
         setIcon(0, icon);
     }
 
-    const model_module_t *getModule()
+    const model_module_t *getModule() const
     {
         return module;
     }

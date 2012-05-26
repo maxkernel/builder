@@ -33,6 +33,7 @@ private slots:
 
     void updateScriptList();
     void updateBlockList();
+    void updateView();
 
 protected:
     void closeEvent(QCloseEvent *);

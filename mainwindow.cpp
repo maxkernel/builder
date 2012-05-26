@@ -3,9 +3,9 @@
 
 namespace NewBlock
 {
-    BlockInstance *newInstance(const QString &name, const void *userdata);
-    BlockInstance *newSyscall(const QString &name, const void *userdata);
-    BlockInstance *newRategroup(const QString &name, const void *userdata);
+    model_linkable_t *newInstance(model_t *model, model_script_t *script, const QString &name, const void *userdata);
+    model_linkable_t *newSyscall(model_t *model, model_script_t *script, const QString &name, const void *userdata);
+    model_linkable_t *newRategroup(model_t *model, model_script_t *script, const QString &name, const void *userdata);
 }
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     scene = new QGraphicsScene(this);
     view = new GraphicsView(scene);
+    view->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     setCentralWidget(view);
     setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
@@ -115,6 +116,7 @@ MainWindow::MainWindow(QWidget *parent) :
         scripts = new QListWidget;
         scripts->setSortingEnabled(true);
         connect(scripts, SIGNAL(itemSelectionChanged()), this, SLOT(updateBlockList()));
+        connect(scripts, SIGNAL(itemSelectionChanged()), this, SLOT(updateView()));
 
         QVBoxLayout *scriptPanelLayout = new QVBoxLayout;
         scriptPanelLayout->setSpacing(0);
@@ -198,8 +200,8 @@ void MainWindow::updateBlockList()
         return;
     }
 
-    blocks->addTopLevelItem(new Block(NULL, QIcon(":/images/syscall.png"), "New Syscall", NewBlock::newSyscall, s));
-    blocks->addTopLevelItem(new Block(NULL, QIcon(":/images/rategroup.png"), "New Rategroup", NewBlock::newRategroup, s));
+    blocks->addTopLevelItem(new Block(NULL, QIcon(":/images/syscall.png"), "New Syscall", NewBlock::newSyscall, NULL));
+    blocks->addTopLevelItem(new Block(NULL, QIcon(":/images/rategroup.png"), "New Rategroup", NewBlock::newRategroup, NULL));
 
     iterator_t mitr = model_moduleitr(model, s->getScript());
     {
@@ -220,7 +222,7 @@ void MainWindow::updateBlockList()
                 {
                     const char * block_name = NULL;
                     meta_getblock(block, &block_name, NULL, NULL, NULL, NULL, NULL);
-                    module_item->addChild(new Block(module_item, QIcon(":/images/block.png"), block_name, NewBlock::newInstance, module));
+                    module_item->addChild(new Block(module_item, QIcon(":/images/block.png"), block_name, NewBlock::newInstance, module_item));
                 }
             }
             iterator_free(bitr);
@@ -230,6 +232,21 @@ void MainWindow::updateBlockList()
         }
     }
     iterator_free(mitr);
+}
+
+void MainWindow::updateView()
+{
+    view->closeScript();
+
+    Script *s = getSelectedScript();
+    if (s == NULL)
+    {
+        return;
+    }
+
+    const model_script_t *script = s->getScript();
+
+    view->openScript(model, script);
 }
 
 bool MainWindow::querySave()
@@ -400,6 +417,8 @@ void MainWindow::saveAsProject()
     QDir::setCurrent(QFileInfo(filename).absoluteDir().path());
 
     path = filename;
+
+    setWindowTitle(QString("Kernel Builder - %1").arg(path));
 }
 
 void MainWindow::newScript()
@@ -481,14 +500,14 @@ void MainWindow::loadModule()
 
     const model_script_t *script = s->getScript();
 
-    QString filepath = QFileDialog::getOpenFileName(this);
-    if (filepath.isNull())
+    QString filename = QFileDialog::getOpenFileName(this, "Select which module to load", QDir::currentPath(), "MaxKernel module (*.mo)");
+    if (filename.isEmpty())
     {
         return;
     }
 
     exception_t *e = NULL;
-    meta_t *meta = meta_parseelf(filepath.toAscii().constData(), &e);
+    meta_t *meta = meta_parseelf(filename.toAscii().constData(), &e);
     if (meta == NULL || exception_check(&e))
     {
         QMessageBox::warning(0, "Load error", (e == NULL)? "Unknown error" : e->message);
@@ -496,7 +515,7 @@ void MainWindow::loadModule()
         return;
     }
 
-    model_module_t * module = model_newmodule(model, const_cast<model_script_t *>(script), meta, &e);
+    model_module_t * module = model_newmodule(model, (model_script_t *)script, meta, &e);
     meta_destroy(meta);
 
     if (module == NULL || exception_check(&e))
@@ -505,6 +524,9 @@ void MainWindow::loadModule()
         exception_free(e);
         return;
     }
+
+    // Save the directory path to prime the open dialog box next time
+    QDir::setCurrent(QFileInfo(filename).absoluteDir().path());
 
     updateBlockList();
 
@@ -618,8 +640,8 @@ void MainWindow::configModule()
             meta_getvariable(i.key(), &v_name, &v_sig, &v_desc, NULL);      // TODO - Print the default value of the config
             config_info->appendPlainText(QString("%1: %2\n").arg(v_name, v_desc));
 
-            popupLayout->addWidget(new QLabel(QString("(%1) %2").arg(Global::getType(v_sig), v_name)), row, 0, 1, 1);
-            popupLayout->addWidget(i.value(), row, 1, 1, 1);
+            popupLayout->addWidget(new QLabel(QString("(%1) %2").arg(Global::getType(v_sig), v_name)), row, 0);
+            popupLayout->addWidget(i.value(), row, 1);
         }
 
         QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -658,7 +680,7 @@ void MainWindow::configModule()
             if (!value.isEmpty())
             {
                 exception_t *e = NULL;
-                model_config_t *config = model_newconfig(model, const_cast<model_module_t *>(module), config_name.toAscii().constData(), value.toAscii().constData(), &e);
+                model_config_t *config = model_newconfig(model, (model_module_t *)module, config_name.toAscii().constData(), value.toAscii().constData(), &e);
                 if (config == NULL || exception_check(&e))
                 {
                     QMessageBox::critical(this, "Error setting config", QString("Could not set config value %1\nReason: %2").arg(config_name, e == NULL? "Unknown error" : e->message));
@@ -676,6 +698,14 @@ void MainWindow::newInstance()
         return;
     }
 
+    Script *s = getSelectedScript();
+    if (s == NULL)
+    {
+        statusBar()->showMessage("Error: Must select a script first");
+        return;
+    }
+    const model_script_t *script = s->getScript();
+
     Block *b = getSelectedBlock();
     if (b == NULL)
     {
@@ -683,24 +713,135 @@ void MainWindow::newInstance()
         return;
     }
 
-    BlockInstance *bi = b->create();
-    if (bi == NULL)
+    model_linkable_t *l = b->create(model, (model_script_t *)script);
+    if (l == NULL)
     {
         return;
     }
+
+    view->addLinkable(l);
 }
 
-BlockInstance *NewBlock::newInstance(const QString &name, const void *userdata)
+model_linkable_t *NewBlock::newInstance(model_t *model, model_script_t *script, const QString &name, const void *userdata)
 {
+    const Module *m = (const Module *)userdata;
+
+    const model_module_t *module = m->getModule();
+
+    const meta_t *meta = NULL;
+    model_getmodule(module, NULL, &meta);
+
+    const meta_block_t *block = NULL;
+    meta_lookupblock(meta, name.toAscii().constData(), &block);
+
+    const char *block_name = NULL, *block_desc = NULL;
+    const char *constructor_sig = NULL, *constructor_desc = NULL;
+    meta_getblock(block, &block_name, &block_desc, NULL, &constructor_sig, &constructor_desc, NULL);
+
+    QList<QLineEdit *> args;
+
+    // Create the forms
+    QDialog popup;
+    popup.resize(500, 400);
+
+    // Create the GUI
+    {
+        QGridLayout *popupLayout = new QGridLayout;
+
+        popupLayout->addWidget(new QLabel(block_desc), 0, 0, 1, 2);
+
+        QString constructor_str(constructor_desc);
+        constructor_str.replace(" (", "\n(");
+        QPlainTextEdit *constructor_info = new QPlainTextEdit(constructor_str);
+        constructor_info->setEnabled(false);
+        popupLayout->addWidget(constructor_info, 1, 0, 1, 2);
+
+        int row = 2;
+        QByteArray sig(constructor_sig);
+        for (int i=0; i<sig.length(); i++)
+        {
+            QLineEdit * arg = new QLineEdit();
+            args.append(arg);
+
+            popupLayout->addWidget(new QLabel(QString(Global::getType(sig.data()[i]))), row, 0);
+            popupLayout->addWidget(arg, row, 1);
+
+            row += 1;
+        }
+
+        QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+        QObject::connect(buttons, SIGNAL(accepted()), &popup, SLOT(accept()));
+        QObject::connect(buttons, SIGNAL(rejected()), &popup, SLOT(reject()));
+        popupLayout->addWidget(buttons, row, 0, 1, 2);
+
+        popup.setLayout(popupLayout);
+    }
+
+    if (popup.exec() != QDialog::Accepted)
+    {
+        return NULL;
+    }
+
+    // Parse out the args
+    const char ** args_raw = new const char *[args.size()];
+    for (int i=0; i<args.size(); i++)
+    {
+        args_raw[i] = args.at(i)->text().toAscii().constData();
+    }
+
+    // Create the block instance
+    exception_t *e = NULL;
+    model_linkable_t *linkable = model_newblockinst(model, (model_module_t *)module, script, block_name, args_raw, args.size(), &e);
+    if (linkable == NULL || exception_check(&e))
+    {
+        QMessageBox::warning(0, "BlockInstance creation error", (e == NULL)? "Unknown error" : e->message);
+        exception_free(e);
+        return NULL;
+    }
+
+    // Create the userdata
+    QPair<QPointF, QList<IOEntry *> > *data = new QPair<QPointF, QList<IOEntry *> >;
+    model_setuserdata(model_object(linkable), data);
+
+    iterator_t ioitr = meta_blockioitr(meta);
+    {
+        const meta_blockio_t *blockio = NULL;
+        while (meta_blockionext(ioitr, &blockio))
+        {
+            const char * test_block_name = NULL;
+            const char * io_name = NULL;
+            meta_iotype_t io_type = meta_unknownio;
+            char io_sig = 0;
+            meta_getblockio(blockio, &test_block_name, &io_name, &io_type, &io_sig, NULL);
+
+            if (strcmp(block_name, test_block_name) == 0)
+            {
+                IOEntry::Type type = IOEntry::Unknown;
+
+                switch (io_type)
+                {
+                    case meta_input:    type = IOEntry::Input;       break;
+                    case meta_output:   type = IOEntry::Output;      break;
+                    default:            continue;
+                }
+
+                data->second.append(new IOEntry(linkable, type, io_name, io_sig));
+            }
+        }
+    }
+    iterator_free(ioitr);
+
+    return linkable;
+}
+
+model_linkable_t *NewBlock::newSyscall(model_t *model, model_script_t *script, const QString &name, const void *userdata)
+{
+    Q_UNUSED(userdata);
     return NULL;
 }
 
-BlockInstance *NewBlock::newSyscall(const QString &name, const void *userdata)
+model_linkable_t *NewBlock::newRategroup(model_t *model, model_script_t *script, const QString &name, const void *userdata)
 {
-    return NULL;
-}
-
-BlockInstance *NewBlock::newRategroup(const QString &name, const void *userdata)
-{
+    Q_UNUSED(userdata);
     return NULL;
 }
