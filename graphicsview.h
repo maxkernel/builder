@@ -3,7 +3,7 @@
 
 #include <QtGui>
 #include <maxmodel/model.h>
-#include "ioentry.h"
+#include "entry.h"
 #include "link.h"
 #include "blockinstance.h"
 
@@ -29,11 +29,13 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
 
 private:
-    IOEntry::Handle *getHandle(IOEntry *entry);
+    Entry::Handle *getEntryHandle(Entry *entry);
+    Link::Handle *getLinkHandle(Link *link);
 
+    const model_t *model;
     const model_script_t *script;
 
-    IOEntry::Handle *dragio;
+    Entry::Handle *dragio, *targetio;
     QList<Link *> links;
 };
 

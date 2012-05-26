@@ -1,14 +1,14 @@
-#ifndef IOENTRY_H
-#define IOENTRY_H
+#ifndef ENTRY_H
+#define ENTRY_H
 
 #include <QtGui>
 #include <maxmodel/model.h>
 
-class IOEntry
+class Entry
 {
 public:
     enum Type { Unknown, Input, Output };
-    IOEntry(const model_linkable_t *linkable, const Type &type, const QString &name, char sig) :
+    Entry(const model_linkable_t *linkable, const Type &type, const QString &name, char sig) :
         linkable(linkable), type(type), name(name), sig(sig)
     {
     }
@@ -21,12 +21,12 @@ public:
     class Handle : public QGraphicsItem
     {
     public:
-        Handle(IOEntry *entry) :
+        Handle(Entry *entry) :
             QGraphicsItem(), entry(entry)
         {
         }
 
-        IOEntry *getEntry() const { return entry; }
+        Entry *getEntry() const { return entry; }
         QRectF boundingRect() const { return QRectF(-10, -10, 20, 20); }
         void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0)
         {
@@ -49,30 +49,18 @@ public:
             painter->restore();
         }
 
-        /*
-        bool operator ==(const Handle &other) const
-        {
-            return *getEntry() == *other.getEntry();
-        }
-
-        bool operator !=(const Handle &other) const
-        {
-            return !(*this == other);
-        }
-        */
-
     private:
-        IOEntry *entry;
+        Entry *entry;
     };
 
     Handle *makeHandle() { return new Handle(this); }
 
-    bool operator ==(const IOEntry &other) const
+    bool operator ==(const Entry &other) const
     {
         return getLinkable() == other.getLinkable() && getName() == other.getName() && getType() == other.getType();
     }
 
-    bool operator !=(const IOEntry &other) const
+    bool operator !=(const Entry &other) const
     {
         return !(*this == other);
     }
@@ -84,4 +72,4 @@ private:
     char sig;
 };
 
-#endif // IOENTRY_H
+#endif // ENTRY_H

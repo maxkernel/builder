@@ -3,7 +3,7 @@
 
 #include <QtGui>
 #include <maxmodel/model.h>
-#include "ioentry.h"
+#include "entry.h"
 
 class BlockInstance : public QGraphicsItem
 {
@@ -13,7 +13,7 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 
     const model_linkable_t *getLinkable() { return linkable; }
-    QPair<QPointF, QList<IOEntry *> > *getData() { return data; }
+    QPair<QPointF, QList<Entry *> > *getData() { return data; }
 
 private:
     QString title;
@@ -22,7 +22,7 @@ private:
     QRectF bounding;
 
     const model_linkable_t *linkable;
-    QPair<QPointF, QList<IOEntry *> > *data;
+    QPair<QPointF, QList<Entry *> > *data;
 };
 
 #endif // BLOCKINSTANCE_H

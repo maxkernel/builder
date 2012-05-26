@@ -800,7 +800,7 @@ model_linkable_t *NewBlock::newInstance(model_t *model, model_script_t *script, 
     }
 
     // Create the userdata
-    QPair<QPointF, QList<IOEntry *> > *data = new QPair<QPointF, QList<IOEntry *> >;
+    QPair<QPointF, QList<Entry *> > *data = new QPair<QPointF, QList<Entry *> >;
     model_setuserdata(model_object(linkable), data);
 
     iterator_t ioitr = meta_blockioitr(meta);
@@ -816,16 +816,16 @@ model_linkable_t *NewBlock::newInstance(model_t *model, model_script_t *script, 
 
             if (strcmp(block_name, test_block_name) == 0)
             {
-                IOEntry::Type type = IOEntry::Unknown;
+                Entry::Type type = Entry::Unknown;
 
                 switch (io_type)
                 {
-                    case meta_input:    type = IOEntry::Input;       break;
-                    case meta_output:   type = IOEntry::Output;      break;
+                    case meta_input:    type = Entry::Input;       break;
+                    case meta_output:   type = Entry::Output;      break;
                     default:            continue;
                 }
 
-                data->second.append(new IOEntry(linkable, type, io_name, io_sig));
+                data->second.append(new Entry(linkable, type, io_name, io_sig));
             }
         }
     }

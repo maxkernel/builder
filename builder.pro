@@ -7,10 +7,10 @@ HEADERS += \
     main.h \
     block.h \
     blockinstance.h \
-    ioentry.h \
     script.h \
     module.h \
-    link.h
+    link.h \
+    entry.h
 
 SOURCES += \
     mainwindow.cpp \

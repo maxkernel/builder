@@ -10,7 +10,7 @@
 BlockInstance::BlockInstance(const QString &title, const model_linkable_t *linkable, const QPixmap &icon, const QColor &color) :
     QGraphicsItem(), title(title), icon(icon), color(color), linkable(linkable)
 {
-    data = (QPair<QPointF, QList<IOEntry *> > *)model_userdata(model_object(linkable));
+    data = (QPair<QPointF, QList<Entry *> > *)model_userdata(model_object(linkable));
 
     QGraphicsSimpleTextItem *name = new QGraphicsSimpleTextItem(title, this);
     name->setFont(QFont("sans-serif", 11, QFont::Bold));
@@ -18,7 +18,7 @@ BlockInstance::BlockInstance(const QString &title, const model_linkable_t *linka
     int width = QFontMetrics(name->font()).width(title) + ICON_OFFSET * 2;
 
     QSet<QString> ios;
-    foreach (IOEntry *e, data->second)
+    foreach (Entry *e, data->second)
     {
         ios.insert(e->getName());
     }
@@ -31,13 +31,13 @@ BlockInstance::BlockInstance(const QString &title, const model_linkable_t *linka
     {
         QGraphicsSimpleTextItem *entry = new QGraphicsSimpleTextItem(n, this);
         entry->setPos( width / 2 - entry->boundingRect().width() / 2, offset + ENTRY_HEIGHT / 2 - entry->boundingRect().height() / 2);
-        foreach (IOEntry *e, data->second)
+        foreach (Entry *e, data->second)
         {
             if (e->getName() == n)
             {
-                IOEntry::Handle *handle = e->makeHandle();
+                Entry::Handle *handle = e->makeHandle();
                 handle->setParentItem(this);
-                handle->setPos(e->getType() == IOEntry::Input? 0 : width, offset + ENTRY_HEIGHT / 2);
+                handle->setPos(e->getType() == Entry::Input? 0 : width, offset + ENTRY_HEIGHT / 2);
             }
         }
 
